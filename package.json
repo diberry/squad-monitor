@@ -1,0 +1,21 @@
+{
+  "name": "project-squad-sdk-example-monitor",
+  "version": "0.1.0",
+  "description": "Team Activity Monitor - unified monitoring product built on Squad SDK",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@bradygaster/squad-sdk": "^1.0.0",
+    "@bradygaster/squad-cli": "^1.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^0.34.0",
+    "typescript": "^5.3.0"
+  }
+}
