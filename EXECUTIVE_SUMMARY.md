@@ -1,7 +1,7 @@
 # Executive Summary: Team Activity Monitor
 
 ## One-Liner
-A real-time terminal dashboard built on Squad SDK that surfaces visibility into multi-agent workflows—showing what's running, what's stuck, and what it costs.
+A terminal UI monitoring prototype that surfaces visibility into multi-agent workflows—showing what's running, what's stuck, and what it costs—using simulated data as a foundation for future Squad SDK integration.
 
 ---
 
@@ -11,10 +11,13 @@ When autonomous agents run multi-step workflows, visibility disappears into logs
 ---
 
 ## The Opportunity
-Squad SDK already has the raw signals—EventBus for lifecycle events, CostTracker for spend, RalphMonitor for health, and SquadState for decisions. What's missing is a consumer-facing lens. Building the reference monitor **in** the SDK ecosystem (not as an external tool) means:
-- Future Squad users get observability out-of-the-box
-- The sample teaches real SDK patterns in context (event handling, state management, streaming)
+The Squad SDK ecosystem will eventually provide the raw signals—EventBus for lifecycle events, CostTracker for spend, RalphMonitor for health, and SquadState for decisions. This prototype establishes the **consumer-facing lens** ahead of time. Building the terminal UI now means:
+- The rendering, collection, and formatting patterns are validated with tests before SDK integration
+- Future Squad users get observability out-of-the-box once wired to real data
+- The sample teaches real UI patterns in context (event handling, state management, streaming)
 - Enterprise adoption unlocks Phase 2: cross-repo orchestration with web dashboards
+
+> **Current state:** All data sources are simulated. No SDK imports exist yet. This is a UI and architecture prototype.
 
 ---
 
@@ -30,17 +33,17 @@ Squad SDK already has the raw signals—EventBus for lifecycle events, CostTrack
 ---
 
 ## What You'll Learn
-- How to subscribe to SDK lifecycle events (EventBus) and build stateful collectors
+- Pattern for building stateful collectors with typed event streams
 - Pattern for correlated data (work items ↔ agent assignments)
 - Real-time terminal rendering with ANSI formatting
-- Integration with platform adapters (GitHub/ADO) for context
+- Factory pattern for platform adapters (GitHub/ADO) with simulated data
 - Graceful signal handling and resource cleanup
 - Testing strategies for event-driven systems
 
 ---
 
 ## Key Differentiator
-Unlike generic observability tools (Datadog, Grafana), this **understands Squad semantics**—agents, work item correlation, team decisions, and cross-squad delegation. It speaks the language of autonomous workflows, not just CPU/memory. It's built **for** the problem, not retrofitted.
+Unlike generic observability tools (Datadog, Grafana), this prototype is designed to **understand Squad semantics**—agents, work item correlation, team decisions, and cross-squad delegation. Once connected to live SDK data, it will speak the language of autonomous workflows, not just CPU/memory. It's built **for** the problem, not retrofitted.
 
 ---
 
@@ -80,4 +83,4 @@ Unlike generic observability tools (Datadog, Grafana), this **understands Squad 
 
 ---
 
-**Recommendation**: Ship Phase 1 as a reference sample in the Squad SDK ecosystem. It unlocks self-serve agent debugging, demonstrates best practices, and builds foundation for enterprise multi-team observability in Phase 2.
+**Recommendation**: Ship Phase 1 as a terminal UI prototype. It validates the rendering, collection, and formatting patterns with full test coverage. Once Squad SDK modules stabilize, wire the collectors to live data sources for real-time agent monitoring.

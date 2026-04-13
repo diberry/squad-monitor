@@ -1,6 +1,8 @@
 # Team Activity Monitor
 
-A unified monitoring product built on Squad SDK that provides real-time visibility into team agent activity, work items, and resource consumption. This is Phase 1 of the monitoring product, featuring a single-team terminal monitor with support for agent status tracking, work item correlation, decision feeds, cost tracking, and health indicators.
+A terminal UI monitoring prototype that provides real-time visibility into team agent activity, work items, and resource consumption. This is Phase 1: a single-team terminal dashboard with support for agent status tracking, work item correlation, decision feeds, cost tracking, and health indicators.
+
+> **Note:** This project does not currently integrate with Squad SDK. Platform adapters return simulated data. See [Future: SDK Integration](#future-sdk-integration) below for the planned integration path.
 
 ## Features
 
@@ -14,7 +16,7 @@ A unified monitoring product built on Squad SDK that provides real-time visibili
 - **Stuck Detection** — Automatically detect agents inactive for >5 minutes and alert with visual warnings
 - **Terminal UI** — Real-time ANSI-formatted dashboard refreshing every 1 second with 4-section layout
 
-## Architecture
+## Current Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -22,8 +24,8 @@ A unified monitoring product built on Squad SDK that provides real-time visibili
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │             EventBus Collector (Foundation)          │   │
-│  │  • Subscribes to SDK RuntimeEventBus events         │   │
+│  │         Simulated Collectors (Foundation)            │   │
+│  │  • In-memory event emission (no SDK EventBus yet)   │   │
 │  │  • Emits typed lifecycle events                      │   │
 │  └─────────────────┬──────────────────────────────────┘   │
 │                    │                                        │
@@ -52,15 +54,17 @@ A unified monitoring product built on Squad SDK that provides real-time visibili
 └──────────────────────────────────────────────────────────┘
 ```
 
-## SDK Modules Used
+## Data Sources (Simulated)
 
-| Module | Purpose | Status |
-|--------|---------|--------|
-| `@bradygaster/squad-sdk: runtime.EventBus` | In-process pub/sub for agent lifecycle events | ✅ Available |
-| `@bradygaster/squad-sdk: ralph.RalphMonitor` | Agent activity tracking and health state | ✅ Available |
-| `@bradygaster/squad-sdk: runtime.cost-tracker` | Token/cost tracking per agent per session | ✅ Available |
-| `@bradygaster/squad-sdk: state.SquadState` | Read team state (agents, decisions, logs) | ✅ Available |
-| `@bradygaster/squad-sdk: platform.createPlatformAdapter()` | Read work items from GitHub/ADO | ✅ Available |
+All data sources currently return **simulated/sample data**. No live API calls are made.
+
+| Component | Current State | Future State |
+|-----------|--------------|--------------|
+| Platform adapters (GitHub/ADO) | Returns hard-coded sample work items | Real GitHub/ADO API calls |
+| Agent status tracking | In-memory collectors | Subscribe to SDK `RuntimeEventBus` |
+| Cost tracking | Manual data injection | Read from SDK `CostTracker` |
+| Health monitoring | Manual data injection | Read from SDK `RalphMonitor` |
+| Decision feed | Manual data injection | Read from SDK `SquadState` |
 
 ## Project Structure
 
@@ -105,7 +109,6 @@ test/
 ### Prerequisites
 
 - Node.js 18+ with npm
-- @bradygaster/squad-sdk (peer dependency)
 
 ### Installation
 
@@ -143,10 +146,9 @@ The monitor is configured at runtime via the `TeamActivityMonitor` constructor a
 
 **Key configuration points:**
 
-1. **EventBus** — Pass your Squad SDK `RuntimeEventBus` instance to `EventBusCollector`
-2. **Platform Adapter** — Use `PlatformAdapterFactory` to select GitHub or Azure DevOps
-3. **Render Interval** — Default 1s; modify `TeamActivityMonitor.start()` line 52 to adjust
-4. **Stuck Threshold** — Default 5 minutes; modify in `StuckDetector` constructor
+1. **Platform Adapter** — Use `PlatformAdapterFactory` to select GitHub or Azure DevOps (currently returns simulated data)
+2. **Render Interval** — Default 1s; modify `TeamActivityMonitor.start()` line 52 to adjust
+3. **Stuck Threshold** — Default 5 minutes; modify in `StuckDetector` constructor
 
 **Example initialization:**
 
@@ -163,6 +165,18 @@ await monitor.start();
 ## Quick Start
 
 See [QUICKSTART.md](./QUICKSTART.md) for a step-by-step walkthrough of starting your first monitoring session.
+
+## Future: SDK Integration
+
+This prototype is designed to eventually integrate with `@bradygaster/squad-sdk`. Here's what real integration would look like:
+
+1. **EventBus subscription** — Replace the in-memory event emitter with `runtime.EventBus` from the SDK to receive real agent lifecycle events (`agent.idle`, `agent.working`, `agent.completed`, `agent.failed`).
+2. **Live platform adapters** — Replace the simulated `fetchWorkItems()` stubs with calls to `platform.createPlatformAdapter()` from the SDK, which connects to the GitHub and Azure DevOps APIs using real credentials.
+3. **Cost tracking** — Wire `CostCollector` to `runtime.CostTracker` to pull real token consumption and estimated cost data per agent session.
+4. **Health monitoring** — Connect `HealthCollector` to `ralph.RalphMonitor` for live circuit breaker state, rate limit status, and error counts.
+5. **State management** — Use `state.SquadState` to read team decisions, agent assignments, and squad configuration instead of manual data injection.
+
+Once the SDK exposes these modules as stable APIs, the monitor can be upgraded from simulated to live data with minimal changes to the collector interfaces.
 
 ## Known Limitations (Phase 1)
 
