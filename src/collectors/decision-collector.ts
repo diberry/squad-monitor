@@ -6,15 +6,24 @@ export class DecisionCollector {
   private decisions: Decision[] = [];
 
   loadDecisions(decisions: Decision[]): void {
-    // Load decisions from SquadState
+    this.decisions = [...decisions];
   }
 
   getDecisionFeed(): Decision[] {
-    // Return decisions ordered by timestamp (newest first)
-    return [];
+    return [...this.decisions].sort(
+      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+    );
   }
 
   addDecision(decision: Decision): void {
-    // Add new decision
+    this.decisions.push(decision);
+  }
+
+  getDecisionCount(): number {
+    return this.decisions.length;
+  }
+
+  getDecisionById(id: string): Decision | undefined {
+    return this.decisions.find(d => d.id === id);
   }
 }

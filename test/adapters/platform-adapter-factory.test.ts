@@ -3,10 +3,22 @@ import { PlatformAdapterFactory } from '../../src/adapters/platform-adapter-fact
 
 describe('PlatformAdapterFactory', () => {
   it('should create GitHub adapter', () => {
-    // Test creating GitHub adapter
+    const adapter = PlatformAdapterFactory.create('github');
+    expect(adapter).toBeDefined();
+    expect(adapter.platform).toBe('github');
+    expect(typeof adapter.fetchWorkItems).toBe('function');
   });
 
   it('should create ADO adapter', () => {
-    // Test creating ADO adapter
+    const adapter = PlatformAdapterFactory.create('ado');
+    expect(adapter).toBeDefined();
+    expect(adapter.platform).toBe('ado');
+    expect(typeof adapter.fetchWorkItems).toBe('function');
+  });
+
+  it('should return empty work items from default adapters', async () => {
+    const ghAdapter = PlatformAdapterFactory.create('github');
+    const items = await ghAdapter.fetchWorkItems();
+    expect(items).toEqual([]);
   });
 });

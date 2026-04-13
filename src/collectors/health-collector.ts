@@ -13,7 +13,27 @@ export class HealthCollector {
     return Array.from(this.health.values());
   }
 
-  updateHealth(agentId: string, health: Partial<HealthStatus>): void {
-    // Update agent health status
+  updateHealth(agentId: string, update: Partial<HealthStatus>): void {
+    const existing = this.health.get(agentId) ?? {
+      agentId,
+      circuitBreakerOpen: false,
+      rateLimited: false,
+      errorCount: 0,
+    };
+    this.health.set(agentId, { ...existing, ...update, agentId });
+  }
+
+  markRateLimited(agentId: string, limited: boolean = true): void {
+    this.updateHealth(agentId, { rateLimited: limited });
+  }
+
+  markCircuitBreakerOpen(agentId: string, open: boolean = true): void {
+    this.updateHealth(agentId, { circuitBreakerOpen: open });
+  }
+
+  incrementErrorCount(agentId: string): void {
+    const existing = this.health.get(agentId);
+    const errorCount = (existing?.errorCount ?? 0) + 1;
+    this.updateHealth(agentId, { errorCount, lastError: new Date() });
   }
 }

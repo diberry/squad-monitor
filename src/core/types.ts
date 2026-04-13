@@ -81,3 +81,16 @@ export interface FileChange {
   timestamp: Date;
   changeType: 'create' | 'modify' | 'delete';
 }
+
+export interface StuckAlert {
+  agentId: string;
+  duration: number;
+  message: string;
+}
+
+export interface FileChangeSummary {
+  filepath: string;
+  count: number;
+  lastAgent: string;
+  lastTimestamp: Date;
+}

@@ -10,10 +10,7 @@
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage"
   },
-  "dependencies": {
-    "@bradygaster/squad-sdk": "^1.0.0",
-    "@bradygaster/squad-cli": "^1.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "vitest": "^0.34.0",
     "typescript": "^5.3.0"
