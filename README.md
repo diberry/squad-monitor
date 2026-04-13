@@ -1,223 +1,321 @@
 # Team Activity Monitor
 
-A terminal UI monitoring prototype that provides real-time visibility into team agent activity, work items, and resource consumption. This is Phase 1: a single-team terminal dashboard with support for agent status tracking, work item correlation, decision feeds, cost tracking, and health indicators.
+Real-time terminal dashboard for monitoring Squad agent activity, work items, decisions, and resource consumption. Phase 1 focuses on single-team telemetry with support for agent status, cost tracking, health monitoring, and event timelines.
 
-> **Note:** This project does not currently integrate with Squad SDK. Platform adapters return simulated data. See [Future: SDK Integration](#future-sdk-integration) below for the planned integration path.
+> **Current State:** Data sources are simulated. See [Future: SDK Integration](#future-sdk-integration) for planned live integration with Squad SDK.
 
-## Features
+## Using This Example
 
-- **Agent Status Board** — Track real-time agent state transitions (idle → working → completed/failed) with duration and current tasks
-- **Work Item Tracker** — Monitor work items from GitHub/Azure DevOps, correlate with agent assignments, and track status changes
-- **Decision Feed** — View squad decisions in chronological order with timestamps and authorship
-- **Session Timeline** — Stream all significant events (agent transitions, decisions, work updates, errors) in a scrollable history
-- **Cost Tracking** — Track token consumption and estimated cost per agent, with aggregated session totals and per-minute rates
-- **Health Indicators** — Monitor agent health state (circuit breaker, rate limits, error counts) with prominent alerts
-- **File Change Tracking** — Track file modifications attributed to agents; identify "hot files" in your session
-- **Stuck Detection** — Automatically detect agents inactive for >5 minutes and alert with visual warnings
-- **Terminal UI** — Real-time ANSI-formatted dashboard refreshing every 1 second with 4-section layout
+### Prerequisites
 
-## Current Architecture
+- **Node.js 18+** ([download](https://nodejs.org/)) — verify with `node --version`
+- **npm 9+** (included with Node.js) — verify with `npm --version`
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│             TeamActivityMonitor (Orchestrator)              │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │         Simulated Collectors (Foundation)            │   │
-│  │  • In-memory event emission (no SDK EventBus yet)   │   │
-│  │  • Emits typed lifecycle events                      │   │
-│  └─────────────────┬──────────────────────────────────┘   │
-│                    │                                        │
-│     ┌──────────────┼──────────────┬──────────────────┐     │
-│     ▼              ▼              ▼                  ▼     │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │
-│  │ Monitor  │ │ Timeline │ │ Workitem │ │ Decision │    │
-│  │ Collector│ │ Collector│ │Collector │ │ Collector│    │
-│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘    │
-│       │            │            │            │            │
-│     ┌─┴──────┬─────┴───────┬────┴────────┬──┴────────┐   │
-│     ▼        ▼             ▼              ▼           ▼   │
-│  ┌───────────────────────────────────────────────────┐   │
-│  │      TerminalRenderer (Display Layer)             │   │
-│  │  • Agent Board formatter                          │   │
-│  │  • Work Tracker formatter                         │   │
-│  │  • Decision Feed formatter                        │   │
-│  │  • Timeline formatter                             │   │
-│  └───────────────────────────────────────────────────┘   │
-│                      │                                    │
-│                      ▼                                    │
-│           ┌────────────────────┐                          │
-│           │ ANSI Terminal Output│                          │
-│           │   [Real-time UI]   │                          │
-│           └────────────────────┘                          │
-└──────────────────────────────────────────────────────────┘
+### Installation
+
+```bash
+git clone https://github.com/bradygaster/project-squad-sdk-example-monitor.git
+cd project-squad-sdk-example-monitor
+npm install
+npm run build
 ```
 
-## Data Sources (Simulated)
+### Start Monitoring
 
-All data sources currently return **simulated/sample data**. No live API calls are made.
+Create a simple script `monitor.mjs`:
 
-| Component | Current State | Future State |
-|-----------|--------------|--------------|
-| Platform adapters (GitHub/ADO) | Returns hard-coded sample work items | Real GitHub/ADO API calls |
-| Agent status tracking | In-memory collectors | Subscribe to SDK `RuntimeEventBus` |
-| Cost tracking | Manual data injection | Read from SDK `CostTracker` |
-| Health monitoring | Manual data injection | Read from SDK `RalphMonitor` |
-| Decision feed | Manual data injection | Read from SDK `SquadState` |
+```javascript
+import { TeamActivityMonitor } from './dist/index.js';
+
+const monitor = new TeamActivityMonitor();
+console.log('🚀 Starting Team Activity Monitor...\n');
+await monitor.start();
+console.log('✓ Monitor running. Press Ctrl+C to stop.\n');
+```
+
+Run it:
+
+```bash
+node monitor.mjs
+```
+
+### Expected Output
+
+The terminal displays a 4-section dashboard updating every 1 second:
+
+```
+╔════════════════════════════════════════════════════════════╗
+║              TEAM ACTIVITY MONITOR DASHBOARD                ║
+╠════════════════════════════════════════════════════════════╣
+║                                                            ║
+║ AGENTS                                                     ║
+║ ┌─────────────┬──────────┬──────────┬─────────────────┐   ║
+║ │ Agent ID    │ State    │ Duration │ Current Task    │   ║
+║ ├─────────────┼──────────┼──────────┼─────────────────┤   ║
+║ │ Agent-001   │ working  │ 2.3s     │ Analyzing file  │   ║
+║ │ Agent-002   │ idle     │ 45.1s    │ -               │   ║
+║ │ Agent-003   │ completed│ 12.4s    │ ✓ Done          │   ║
+║ └─────────────┴──────────┴──────────┴─────────────────┘   ║
+║                                                            ║
+║ WORK ITEMS                                                 ║
+║ ┌──────┬──────────────────────┬─────────────┬──────────┐  ║
+║ │ ID   │ Title                │ Assignee    │ Status   │  ║
+║ ├──────┼──────────────────────┼─────────────┼──────────┤  ║
+║ │ #42  │ Fix login validation │ Agent-001   │ In Prog  │  ║
+║ │ #41  │ Add auth tests       │ Agent-002   │ Open     │  ║
+║ └──────┴──────────────────────┴─────────────┴──────────┘  ║
+║                                                            ║
+║ DECISIONS                                                  ║
+║ • 14:32:15 [Agent-001] Chose strategy: iterative_refine  ║
+║ • 14:32:08 [Agent-003] Decision: refactor_module_A      ║
+║                                                            ║
+║ TIMELINE (last 50 events)                                 ║
+║ 14:32:45 → Agent-001 transitioned to working              ║
+║ 14:32:30 → Decision made: Code review strategy            ║
+║ 14:32:15 → Work item #42 updated to in_progress          ║
+║ 14:32:00 → Agent-003 completed work                       ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+
+💰 Cost: $0.42 | Rate: 150 tokens/min | Budget: $50.00
+🟢 Agents: 3 healthy, 0 rate-limited, 0 circuit-open
+```
+
+### Dashboard Sections
+
+| Section | Shows | Key Columns |
+|---------|-------|-------------|
+| **AGENTS** | Active agents in this session | ID, State (idle/working/completed/failed), Duration, Current Task |
+| **WORK ITEMS** | GitHub/ADO issues assigned to agents | Issue ID, Title, Assignee, Status |
+| **DECISIONS** | Decisions made by agents (chronological) | Timestamp, Agent, Decision text |
+| **TIMELINE** | All session events in order | Timestamp, Event type, Details |
+
+### Configuration
+
+The monitor works out of the box with sensible defaults. No config file required. Customize by editing your script:
+
+```javascript
+import { TeamActivityMonitor } from './dist/index.js';
+
+const monitor = new TeamActivityMonitor();
+
+// Customize individual collectors
+const agentMonitor = monitor.getMonitorCollector();
+const workTracker = monitor.getWorkItemCollector();
+const timelineCollector = monitor.getTimelineCollector();
+
+// Example: Get only specific event types from timeline
+const transitions = timelineCollector.getTimeline({ 
+  eventType: 'AGENT_TRANSITION' 
+});
+
+await monitor.start();
+```
+
+## Extending This Example
+
+### Adding Custom Collectors
+
+Create a new collector following the pattern:
+
+```typescript
+// src/collectors/custom-collector.ts
+import { TimelineEvent, EventType } from '../core/types';
+
+export class CustomCollector {
+  private data: any[] = [];
+
+  process(event: TimelineEvent): void {
+    // Your custom processing
+    this.data.push(event);
+  }
+
+  getData(): any[] {
+    return this.data;
+  }
+}
+```
+
+Subscribe it to the EventBus:
+
+```typescript
+import { TeamActivityMonitor } from './dist/index.js';
+import { CustomCollector } from './dist/collectors/custom-collector.js';
+
+const monitor = new TeamActivityMonitor();
+const customCollector = new CustomCollector();
+
+// Subscribe to event bus
+const eventBus = monitor.getEventBusCollector();
+eventBus.on('agent.transition', (event) => {
+  customCollector.process(event);
+});
+
+await monitor.start();
+```
+
+### Integrating with Real Squad SDK EventBus
+
+When `@bradygaster/squad-sdk` exposes its `RuntimeEventBus`, replace the simulated EventBus:
+
+```typescript
+import { getRuntimeEventBus } from '@bradygaster/squad-sdk';
+import { EventBusCollector } from './dist/index.js';
+
+// Replace simulated EventBus with live one
+const liveEventBus = await getRuntimeEventBus();
+const collector = new EventBusCollector(liveEventBus);
+
+// Now all events are real squad agent data
+```
+
+### Adding Custom Formatters
+
+Create a renderer for any new data source:
+
+```typescript
+// src/renderers/formatters/custom-formatter.ts
+import { AnsiUtils } from '../ansi-utils';
+
+export class CustomFormatter {
+  format(data: any[]): string {
+    const lines = data.map(item => 
+      `${AnsiUtils.bold(item.id)}: ${item.value}`
+    );
+    return AnsiUtils.box(lines.join('\n'), 'Custom Data');
+  }
+}
+```
+
+Add it to the TerminalRenderer and integrate into the dashboard layout.
+
+### Architecture Overview
+
+```
+                    ┌──────────────────┐
+                    │   EventBus       │
+                    │  (simulated)     │
+                    └────────┬─────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         ▼                   ▼                   ▼
+    ┌─────────────┐   ┌──────────────┐  ┌─────────────┐
+    │ MonitorColl │   │ WorkItemColl │  │ TimelineColl│
+    │ (agents)    │   │ (issues)     │  │ (events)    │
+    └────┬────────┘   └──────┬───────┘  └──────┬──────┘
+         │                   │                  │
+         └───────────────────┼──────────────────┘
+                             │
+                      ┌──────▼───────┐
+                      │Terminal      │
+                      │Renderer      │
+                      │(formatters)  │
+                      └──────┬───────┘
+                             │
+                      ┌──────▼──────┐
+                      │ANSI Terminal│
+                      └─────────────┘
+```
+
+**Components:**
+
+- **EventBusCollector** — Subscribes to agent/decision/cost events; emits typed timeline events
+- **MonitorCollector** — Tracks agent state transitions (idle → working → done)
+- **WorkItemCollector** — Polls platform adapters for GitHub/ADO issues
+- **TimelineCollector** — Builds scrollable event log
+- **Other Collectors** — Cost, Health, FileChange, StuckDetector (see src/collectors/)
+- **TerminalRenderer** — Formats each collector's data into ANSI dashboard
 
 ## Project Structure
 
 ```
 src/
-├── index.ts                          # Main entry point & public API
-├── monitor.ts                        # TeamActivityMonitor orchestrator
+├── index.ts                    # Public API exports
+├── monitor.ts                  # Orchestrator (start, stop, collect)
 ├── core/
-│   ├── eventbus-collector.ts         # EventBus subscription & event emission
-│   ├── monitor-collector.ts          # Agent state tracking
-│   ├── timeline-collector.ts         # Event timeline with filtering
-│   └── types.ts                      # Shared types (AgentState, EventType, etc)
+│   ├── eventbus-collector.ts   # Event emission (simulated or live)
+│   ├── monitor-collector.ts    # Agent state tracking
+│   ├── timeline-collector.ts   # Event timeline with filtering
+│   └── types.ts                # Shared types (EventType, AgentState, etc)
 ├── collectors/
-│   ├── work-item-collector.ts        # Work item tracking from platform
-│   ├── decision-collector.ts         # Decision feed from SquadState
-│   ├── cost-collector.ts             # Cost tracking from CostTracker
-│   ├── health-collector.ts           # Health indicators from RalphMonitor
-│   ├── file-change-collector.ts      # File modification tracking
-│   └── stuck-detector.ts             # Stuck agent detection (5min threshold)
+│   ├── work-item-collector.ts  # GitHub/ADO work items
+│   ├── decision-collector.ts   # Squad decisions
+│   ├── cost-collector.ts       # Token cost tracking
+│   ├── health-collector.ts     # Circuit breaker, rate limits
+│   ├── file-change-collector.ts# File modifications
+│   └── stuck-detector.ts       # Inactive agent alerts
 ├── adapters/
-│   ├── work-item-adapter.ts          # Platform adapter wrapper (GitHub/ADO)
-│   └── platform-adapter-factory.ts   # Factory for creating platform adapters
+│   ├── work-item-adapter.ts    # Platform API wrapper
+│   └── platform-adapter-factory.ts # GitHub/ADO factory
 └── renderers/
-    ├── terminal-renderer.ts          # Main ANSI rendering orchestrator
-    ├── ansi-utils.ts                 # ANSI color/formatting utilities
+    ├── terminal-renderer.ts    # Dashboard orchestrator
+    ├── ansi-utils.ts           # Colors, boxes, tables
     └── formatters/
-        ├── agent-board.ts            # Agent table formatting
-        ├── work-tracker.ts           # Work item formatting
-        ├── decision-feed.ts          # Decision list formatting
-        ├── timeline.ts               # Timeline formatting
-        ├── cost-ticker.ts            # Cost display
-        ├── health-indicator.ts       # Health status
-        ├── file-changes.ts           # File change summary
-        └── alerts.ts                 # Alert display
-
-test/
-└── [Mirror of src/ structure with .test.ts files]
+        ├── agent-board.ts      # Agent table
+        ├── work-tracker.ts     # Issue table
+        ├── decision-feed.ts    # Decision list
+        ├── timeline.ts         # Event timeline
+        ├── cost-ticker.ts      # Cost display
+        ├── health-indicator.ts # Health status
+        ├── file-changes.ts     # File summary
+        └── alerts.ts           # Warnings
 ```
 
-## Getting Started
+## SDK Modules
 
-### Prerequisites
+The monitor currently uses these simulated Squad SDK concepts:
 
-- Node.js 18+ with npm
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/bradygaster/project-squad-sdk-example-monitor.git
-cd project-squad-sdk-example-monitor
-
-# Install dependencies
-npm install
-
-# Build TypeScript
-npm run build
-```
-
-### Build & Test
-
-```bash
-# Build the project
-npm run build
-
-# Run all tests
-npm run test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
-```
-
-### Configuration
-
-The monitor is configured at runtime via the `TeamActivityMonitor` constructor and `start()` method. No configuration file is needed for basic operation.
-
-**Key configuration points:**
-
-1. **Platform Adapter** — Use `PlatformAdapterFactory` to select GitHub or Azure DevOps (currently returns simulated data)
-2. **Render Interval** — Default 1s; modify `TeamActivityMonitor.start()` line 52 to adjust
-3. **Stuck Threshold** — Default 5 minutes; modify in `StuckDetector` constructor
-
-**Example initialization:**
-
-```typescript
-import { TeamActivityMonitor } from '@bradygaster/project-squad-sdk-example-monitor';
-
-const monitor = new TeamActivityMonitor();
-await monitor.start();
-
-// Monitor runs in background, rendering to terminal every 1s
-// Press Ctrl+C to stop gracefully
-```
-
-## Quick Start
-
-See [QUICKSTART.md](./QUICKSTART.md) for a step-by-step walkthrough of starting your first monitoring session.
-
-## Future: SDK Integration
-
-This prototype is designed to eventually integrate with `@bradygaster/squad-sdk`. Here's what real integration would look like:
-
-1. **EventBus subscription** — Replace the in-memory event emitter with `runtime.EventBus` from the SDK to receive real agent lifecycle events (`agent.idle`, `agent.working`, `agent.completed`, `agent.failed`).
-2. **Live platform adapters** — Replace the simulated `fetchWorkItems()` stubs with calls to `platform.createPlatformAdapter()` from the SDK, which connects to the GitHub and Azure DevOps APIs using real credentials.
-3. **Cost tracking** — Wire `CostCollector` to `runtime.CostTracker` to pull real token consumption and estimated cost data per agent session.
-4. **Health monitoring** — Connect `HealthCollector` to `ralph.RalphMonitor` for live circuit breaker state, rate limit status, and error counts.
-5. **State management** — Use `state.SquadState` to read team decisions, agent assignments, and squad configuration instead of manual data injection.
-
-Once the SDK exposes these modules as stable APIs, the monitor can be upgraded from simulated to live data with minimal changes to the collector interfaces.
-
-## Known Limitations (Phase 1)
-
-- **Single instance only** — EventBus is in-process; no cross-repo visibility
-- **Terminal only** — No web UI (Phase 2)
-- **No persistence** — History lost on process exit
-- **No authentication** — Single-user only
-- **Manual refresh** — Dashboard updates every 1s; not real-time push
-
-## Phase 2 Roadmap
-
-- Cross-repo event aggregation
-- Web dashboard UI
-- Multi-user authentication
-- Historical replay with data persistence
-- Org-wide squad discovery integration
+| Module | Used For | Future SDK Path |
+|--------|----------|-----------------|
+| `EventType` (types) | Event classification | `@bradygaster/squad-sdk/runtime` |
+| `AgentState` (types) | Agent lifecycle | `@bradygaster/squad-sdk/runtime` |
+| Platform adapters | Work item fetching | `@bradygaster/squad-sdk/platform` |
+| Cost tracking | Token accounting | `@bradygaster/squad-sdk/observability` |
+| Health monitoring | Circuit breaker state | `@bradygaster/squad-sdk/health` |
 
 ## Testing
 
-The project uses [Vitest](https://vitest.dev/) for unit and integration tests. All collectors, adapters, formatters, and the main monitor are tested with >80% coverage target.
-
 ```bash
-npm run test              # Run all tests
+npm run test              # Run all tests once
 npm run test:watch       # Watch mode for development
-npm run test:coverage    # Generate coverage report
+npm run test:coverage    # Generate coverage report (target: >80%)
 ```
 
-## Architecture Decisions
+Collectors and formatters are tested with >80% coverage. See `test/` for patterns.
 
-See [PLAN.md](./PLAN.md) for the detailed TDD implementation plan, including:
-- Feature group specifications with acceptance criteria
-- Dependency graph and build order
-- Testing strategy
-- Phase 1 and Phase 2 roadmap
+## Roadmap
+
+**Phase 1 (Current)**
+- Single-team terminal dashboard
+- Simulated data sources
+- 4-section layout (agents, work, decisions, timeline)
+- Cost and health tracking
+
+**Phase 2**
+- Cross-repo event aggregation
+- Web dashboard UI
+- Multi-user authentication
+- Historical replay with persistence
+- Org-wide squad discovery
+
+## Future: SDK Integration
+
+When `@bradygaster/squad-sdk` releases stable APIs, this example will upgrade to live data:
+
+1. **EventBus** — Use `runtime.EventBus` instead of simulated emitter
+2. **Platform adapters** — Real GitHub/ADO API calls via `platform.createPlatformAdapter()`
+3. **Cost tracking** — Pull from `runtime.CostTracker`
+4. **Health monitoring** — Subscribe to `ralph.RalphMonitor` alerts
+5. **Decisions** — Read from `state.SquadState` instead of manual injection
+
+All collector interfaces are designed to support this transition without breaking changes.
 
 ## Contributing
 
 1. Create a feature branch: `git checkout -b squad/N-feature-name`
 2. Write tests first (TDD)
-3. Implement the feature
-4. Ensure all tests pass: `npm run test`
+3. Implement feature
+4. Run `npm run test` to verify
 5. Open a pull request
 
 ## License

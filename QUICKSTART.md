@@ -1,125 +1,80 @@
-# Quick Start Guide — Team Activity Monitor
+# Quick Start — Team Activity Monitor
 
-Get up and running with the Team Activity Monitor in 5 minutes.
+Get a monitoring dashboard running in 5 minutes. No code writing required.
 
 ## Prerequisites
 
-- **Node.js 18+** ([download](https://nodejs.org/))
-- **npm 9+** (comes with Node.js)
-- **git** (for cloning)
+- **Node.js 18+** — [download](https://nodejs.org/) or verify with `node --version`
+- **npm 9+** — included with Node.js
+- **git** — for cloning
 
-Verify your setup:
+Verify your environment:
+
 ```bash
-node --version    # Should be v18.0.0 or higher
-npm --version     # Should be 9.0.0 or higher
-git --version     # Should be 2.x.x or higher
+node --version    # v18.0.0 or higher
+npm --version     # 9.0.0 or higher
+git --version     # 2.x.x or higher
 ```
 
 ## Step 1: Clone & Install
 
 ```bash
-# Clone the repository
 git clone https://github.com/bradygaster/project-squad-sdk-example-monitor.git
 cd project-squad-sdk-example-monitor
-
-# Install dependencies
 npm install
-
-# Verify installation
-npm list @bradygaster/squad-sdk
 ```
 
-**Expected output:**
-```
-added 42 packages in 3.5s
-```
+**Expected:** `added 42 packages in ~3s`
 
-## Step 2: Build the Project
+## Step 2: Build
 
 ```bash
 npm run build
 ```
 
-**Expected output:**
-```
-✓ Successfully compiled 28 files
-```
+**Expected:** TypeScript compiles to `dist/` with no errors.
 
-The compiled JavaScript is output to `dist/` directory.
-
-## Step 3: Run the Tests
+## Step 3: Run Tests
 
 ```bash
 npm run test
 ```
 
-**Expected output:**
+**Expected:** All tests pass (28+ tests in ~1-2s)
+
 ```
 ✓ src/core/eventbus-collector.test.ts (5 tests) 234ms
 ✓ src/core/monitor-collector.test.ts (4 tests) 187ms
 ✓ src/collectors/work-item-collector.test.ts (3 tests) 156ms
-✓ src/collectors/decision-collector.test.ts (3 tests) 142ms
 ...
-
 ✓ 28 passed (1.2s)
 ```
 
-If tests fail, check that all dependencies installed correctly with `npm install`.
+## Step 4: Start Your First Monitor
 
-## Step 4: Your First Monitoring Session
+Create a file `monitor.mjs`:
 
-The monitor integrates with the Squad SDK. Here's how to use it in your own code:
+```javascript
+import { TeamActivityMonitor } from './dist/index.js';
 
-### Create a simple monitor script
-
-Create `my-monitor.ts`:
-
-```typescript
-import { 
-  TeamActivityMonitor,
-  EventBusCollector,
-  MonitorCollector,
-  WorkItemCollector,
-  DecisionCollector,
-  TimelineCollector,
-  TerminalRenderer
-} from './dist/index.js';
-
-// Initialize the monitor
 const monitor = new TeamActivityMonitor();
-
-// Start monitoring with 1s refresh interval
 console.log('🚀 Starting Team Activity Monitor...\n');
 await monitor.start();
-
-console.log('✓ Monitor is running');
-console.log('✓ Agent board is live');
-console.log('✓ Timeline is streaming events');
-console.log('\n📊 Press Ctrl+C to stop\n');
-
-// Graceful shutdown handled by monitor (Ctrl+C)
+console.log('✓ Monitor running. Press Ctrl+C to stop.\n');
 ```
 
-### Run the monitor
+Run it:
 
 ```bash
-# Build your script
-npx tsc my-monitor.ts --module esnext --target es2020
-
-# Run it
-node my-monitor.js
+node monitor.mjs
 ```
 
-**Expected terminal output:**
+**Expected output** (terminal updates every 1 second):
 
 ```
 🚀 Starting Team Activity Monitor...
 
-✓ Monitor is running
-✓ Agent board is live
-✓ Timeline is streaming events
-
-📊 Press Ctrl+C to stop
+✓ Monitor running. Press Ctrl+C to stop.
 
 ╔════════════════════════════════════════════════════════════╗
 ║              TEAM ACTIVITY MONITOR DASHBOARD                ║
@@ -143,14 +98,14 @@ node my-monitor.js
 ║ └──────┴──────────────────────┴─────────────┴──────────┘  ║
 ║                                                            ║
 ║ DECISIONS                                                  ║
-║ • 14:32:15 [Agent-001] Chose strategy: iterative_refinement
-║ • 14:32:08 [Agent-003] Decision: refactor_module_A
+║ • 14:32:15 [Agent-001] Chose strategy: iterative_refine  ║
+║ • 14:32:08 [Agent-003] Decision: refactor_module_A      ║
 ║                                                            ║
-║ TIMELINE (last 10 events)                                  ║
-║ 14:32:45 → Agent-001 transitioned to working               ║
-║ 14:32:30 → Decision made: Code review strategy             ║
-║ 14:32:15 → Work item #42 updated to in_progress           ║
-║ 14:32:00 → Agent-003 completed work                        ║
+║ TIMELINE (last 50 events)                                 ║
+║ 14:32:45 → Agent-001 transitioned to working              ║
+║ 14:32:30 → Decision made: Code review strategy            ║
+║ 14:32:15 → Work item #42 updated to in_progress          ║
+║ 14:32:00 → Agent-003 completed work                       ║
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝
 
@@ -158,196 +113,196 @@ node my-monitor.js
 🟢 Agents: 3 healthy, 0 rate-limited, 0 circuit-open
 ```
 
-## Step 5: Understanding the Dashboard
+Stop with **Ctrl+C**.
 
-The terminal dashboard has four main sections:
+## What You See
+
+The dashboard has four live sections:
 
 ### **AGENTS** (Top Left)
+Tracks the state of each agent:
 - **Agent ID** — Unique identifier
-- **State** — Current status (idle, working, completed, failed)
-- **Duration** — How long in current state
+- **State** — `idle`, `working`, `completed`, or `failed`
+- **Duration** — Seconds in current state
 - **Current Task** — What the agent is doing
 
 ### **WORK ITEMS** (Top Right)
-- **ID** — GitHub/ADO issue number
-- **Title** — Issue title
-- **Assignee** — Which agent is assigned
+GitHub/ADO issues assigned to agents:
+- **ID** — Issue number (e.g., `#42`)
+- **Title** — Issue description
+- **Assignee** — Which agent has it
 - **Status** — Open, In Progress, Completed, Blocked
 
 ### **DECISIONS** (Bottom Left)
-- Chronological feed of decisions made by agents
-- Timestamp and decision title
-- Most recent at the top
+Chronological decisions made by agents. Most recent first:
+- Timestamp and decision text
+- Which agent made it
 
 ### **TIMELINE** (Bottom Right)
-- Stream of all significant events
-- Agent state transitions, decisions, work updates, errors
-- Last 50 events shown (scrollable)
+All significant session events in order:
+- Agent state transitions
+- Decisions made
+- Work item updates
+- Errors and alerts
 
 ## Common Next Steps
 
-### 1. **Monitor a Live Squad Session**
+### Run Tests in Watch Mode
 
-Integrate with an actual Squad task:
-
-```typescript
-import { getRuntimeEventBus } from '@bradygaster/squad-sdk';
-import { TeamActivityMonitor } from './dist/index.js';
-
-// Get the Squad SDK EventBus
-const eventBus = await getRuntimeEventBus();
-
-// Create and start monitor
-const monitor = new TeamActivityMonitor();
-await monitor.start();
-
-// Run your agent work...
-// Monitor will automatically track all events
-```
-
-### 2. **Customize Collectors**
-
-Import individual collectors for specific monitoring:
-
-```typescript
-import { 
-  MonitorCollector,
-  WorkItemCollector,
-  CostCollector 
-} from './dist/index.js';
-
-const agentMonitor = new MonitorCollector();
-const workTracker = new WorkItemCollector();
-const costTracker = new CostCollector();
-
-// Use individually in your own dashboard
-```
-
-### 3. **Filter Timeline Events**
-
-Get only specific event types:
-
-```typescript
-const monitor = new TeamActivityMonitor();
-const timeline = monitor.getTimelineCollector();
-
-// Get only agent state transitions
-const transitions = timeline.getTimeline({ 
-  eventType: 'AGENT_TRANSITION' 
-});
-
-// Get only errors
-const errors = timeline.getTimeline({ 
-  eventType: 'ERROR' 
-});
-```
-
-### 4. **Export Cost Data**
-
-Track session costs:
-
-```typescript
-const monitor = new TeamActivityMonitor();
-const costData = monitor.getMonitor
-Collector().getSessionCost();
-
-console.log(`Total session cost: $${costData.estimatedCost}`);
-console.log(`Tokens used: ${costData.tokens}`);
-console.log(`Rate: ${costData.tokensPerMinute} tokens/min`);
-```
-
-### 5. **Watch Mode Development**
-
-For continuous testing during development:
+For development, auto-run tests when files change:
 
 ```bash
 npm run test:watch
 ```
 
-This runs tests automatically whenever you save a file.
+### Check Code Coverage
 
-### 6. **Check Code Coverage**
-
-See how thoroughly the code is tested:
+See how thoroughly the code is tested (target: >80%):
 
 ```bash
 npm run test:coverage
 ```
 
-Target is >80% coverage for all modules.
+### Explore the API
+
+The public API is in `src/index.ts`. Import individual collectors for custom monitoring:
+
+```javascript
+import { 
+  TeamActivityMonitor,
+  MonitorCollector,
+  WorkItemCollector,
+  TimelineCollector,
+  CostCollector,
+  HealthCollector
+} from './dist/index.js';
+
+const monitor = new TeamActivityMonitor();
+
+// Access individual collectors
+const agentMonitor = monitor.getMonitorCollector();
+const workItems = monitor.getWorkItemCollector();
+const timeline = monitor.getTimelineCollector();
+
+// Use them in your own dashboard, export data, etc.
+```
+
+### Filter Timeline Events
+
+Get only specific event types:
+
+```javascript
+import { TeamActivityMonitor } from './dist/index.js';
+
+const monitor = new TeamActivityMonitor();
+await monitor.start();
+
+// After monitor is running:
+const timeline = monitor.getTimelineCollector();
+
+// Get only agent state transitions
+const transitions = timeline.getTimeline({ eventType: 'AGENT_TRANSITION' });
+
+// Get only errors
+const errors = timeline.getTimeline({ eventType: 'ERROR' });
+
+console.log(`Found ${transitions.length} agent transitions`);
+console.log(`Found ${errors.length} errors`);
+```
+
+### Export Cost Data
+
+Track token usage:
+
+```javascript
+import { TeamActivityMonitor } from './dist/index.js';
+
+const monitor = new TeamActivityMonitor();
+await monitor.start();
+
+// After monitoring:
+const costData = monitor.getMonitorCollector().getSessionCost();
+
+console.log(`Session cost: $${costData.estimatedCost}`);
+console.log(`Tokens: ${costData.tokens}`);
+console.log(`Rate: ${costData.tokensPerMinute} tokens/min`);
+```
+
+### Write a Custom Collector
+
+Add specialized tracking for your use case. See `src/collectors/` for examples and `README.md` → **Extending This Example** for detailed patterns.
 
 ## Troubleshooting
 
-### Issue: `npm install` fails
+### `npm install` fails with permission errors
 
-**Solution:** Clear npm cache and reinstall:
 ```bash
+# Clear npm cache and try again
 npm cache clean --force
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-### Issue: Build fails with TypeScript errors
+### Build fails with TypeScript errors
 
-**Solution:** Make sure you have TypeScript installed globally:
 ```bash
+# Ensure TypeScript is installed
 npm install -g typescript
 npm run build
 ```
 
-### Issue: Tests fail
+### Tests fail or crash
 
-**Solution:** Verify your Node.js version:
 ```bash
-node --version    # Should be v18+
-npm install       # Reinstall dependencies
-npm run build     # Rebuild
-npm test          # Run tests again
+# Verify Node.js version (must be 18+)
+node --version
+
+# Reinstall and rebuild
+npm install
+npm run build
+npm test
 ```
 
-### Issue: Monitor doesn't show data
+### Monitor doesn't display data
 
-**Solution:** Make sure you're passing a live EventBus:
-```typescript
-import { getRuntimeEventBus } from '@bradygaster/squad-sdk';
+- Ensure Node.js version is 18+ (`node --version`)
+- Verify the build succeeded (`npm run build`)
+- Check that no errors appear when you run `node monitor.mjs`
 
-const eventBus = await getRuntimeEventBus();
-// Ensure eventBus is from an active Squad session
-```
-
-## File Structure Reference
+## File Reference
 
 ```
 project-squad-sdk-example-monitor/
 ├── src/                    # TypeScript source
+│   ├── index.ts           # Public API (exports all collectors)
+│   ├── monitor.ts         # Main orchestrator
 │   ├── core/              # Foundation (EventBus, Monitor, Timeline)
 │   ├── collectors/        # Data collectors (Work, Decision, Cost, Health, etc)
 │   ├── adapters/          # Platform adapters (GitHub, ADO)
-│   ├── renderers/         # Terminal rendering
-│   ├── monitor.ts         # Main orchestrator
-│   └── index.ts           # Public API
-├── test/                  # Unit & integration tests
+│   └── renderers/         # Terminal formatting
 ├── dist/                  # Compiled JavaScript (generated)
-├── package.json           # Dependencies & scripts
+├── test/                  # Unit & integration tests
+├── package.json           # Scripts & dependencies
 ├── tsconfig.json          # TypeScript config
 ├── vitest.config.ts       # Test config
-├── README.md              # Full documentation
-└── QUICKSTART.md          # This file
+└── README.md              # Full documentation
 ```
 
 ## What's Next?
 
-- Read [README.md](./README.md) for the full architecture and API reference
-- Review [PLAN.md](./PLAN.md) for the detailed feature specification
-- Explore the test files in `test/` to see how to use each component
-- Check out the TypeScript types in `src/core/types.ts`
+- **Full docs:** Read [README.md](./README.md) for architecture, extending, and SDK integration
+- **Specifications:** Check [PLAN.md](./PLAN.md) for detailed feature specs
+- **Code examples:** Browse `test/` files to see how each component works
+- **Type definitions:** See `src/core/types.ts` for all exported types
 
 ## Getting Help
 
-- **API Questions:** Check `src/index.ts` for exported public API
-- **Type Definitions:** See `src/core/types.ts` for interfaces
-- **Examples:** Look at test files for usage patterns
-- **Build Issues:** Run `npm run build` and check error messages
+| Question | Answer |
+|----------|--------|
+| "What can I import?" | Check `src/index.ts` |
+| "What types are available?" | See `src/core/types.ts` |
+| "How do I use [component]?" | Look at `test/[component].test.ts` |
+| "Build won't work?" | Run `npm install` and `npm run build` with verbose output |
 
 ---
 
