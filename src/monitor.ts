@@ -80,6 +80,7 @@ export class TeamActivityMonitor {
 
   render(): string {
     const output = this.terminalRenderer.render();
+    console.log(output);
     return output;
   }
 }

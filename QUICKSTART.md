@@ -52,68 +52,54 @@ npm run test
 
 ## Step 4: Start Your First Monitor
 
-Create a file `monitor.mjs`:
-
-```javascript
-import { TeamActivityMonitor } from './dist/index.js';
-
-const monitor = new TeamActivityMonitor();
-console.log('🚀 Starting Team Activity Monitor...\n');
-await monitor.start();
-console.log('✓ Monitor running. Press Ctrl+C to stop.\n');
-```
-
-Run it:
+Run the CLI — no script file needed:
 
 ```bash
-node monitor.mjs
+npx squad-monitor start
 ```
 
-**Expected output** (terminal updates every 1 second):
+**Expected output** (terminal updates every 3 seconds):
 
 ```
-🚀 Starting Team Activity Monitor...
+╔══════════════════════════════════════════╗
+║     Team Activity Monitor Dashboard      ║
+╚══════════════════════════════════════════╝
 
-✓ Monitor running. Press Ctrl+C to stop.
+AGENTS
+┌─────────────┬──────────┬──────────┬─────────────────┐
+│ Agent ID    │ State    │ Duration │ Current Task    │
+├─────────────┼──────────┼──────────┼─────────────────┤
+│ Agent-001   │ working  │ 2.3s     │ Analyzing file  │
+│ Agent-002   │ idle     │ 45.1s    │ -               │
+│ Agent-003   │ completed│ 12.4s    │ ✓ Done          │
+└─────────────┴──────────┴──────────┴─────────────────┘
 
-╔════════════════════════════════════════════════════════════╗
-║              TEAM ACTIVITY MONITOR DASHBOARD                ║
-╠════════════════════════════════════════════════════════════╣
-║                                                            ║
-║ AGENTS                                                     ║
-║ ┌─────────────┬──────────┬──────────┬─────────────────┐   ║
-║ │ Agent ID    │ State    │ Duration │ Current Task    │   ║
-║ ├─────────────┼──────────┼──────────┼─────────────────┤   ║
-║ │ Agent-001   │ working  │ 2.3s     │ Analyzing file  │   ║
-║ │ Agent-002   │ idle     │ 45.1s    │ -               │   ║
-║ │ Agent-003   │ completed│ 12.4s    │ ✓ Done          │   ║
-║ └─────────────┴──────────┴──────────┴─────────────────┘   ║
-║                                                            ║
-║ WORK ITEMS                                                 ║
-║ ┌──────┬──────────────────────┬─────────────┬──────────┐  ║
-║ │ ID   │ Title                │ Assignee    │ Status   │  ║
-║ ├──────┼──────────────────────┼─────────────┼──────────┤  ║
-║ │ #42  │ Fix login validation │ Agent-001   │ In Prog  │  ║
-║ │ #41  │ Add auth tests       │ Agent-002   │ Open     │  ║
-║ └──────┴──────────────────────┴─────────────┴──────────┘  ║
-║                                                            ║
-║ DECISIONS                                                  ║
-║ • 14:32:15 [Agent-001] Chose strategy: iterative_refine  ║
-║ • 14:32:08 [Agent-003] Decision: refactor_module_A      ║
-║                                                            ║
-║ TIMELINE (last 50 events)                                 ║
-║ 14:32:45 → Agent-001 transitioned to working              ║
-║ 14:32:30 → Decision made: Code review strategy            ║
-║ 14:32:15 → Work item #42 updated to in_progress          ║
-║ 14:32:00 → Agent-003 completed work                       ║
-║                                                            ║
-╚════════════════════════════════════════════════════════════╝
+WORK ITEMS
+┌──────┬──────────────────────┬─────────────┬──────────┐
+│ ID   │ Title                │ Assignee    │ Status   │
+├──────┼──────────────────────┼─────────────┼──────────┤
+│ #42  │ Fix login validation │ Agent-001   │ In Prog  │
+│ #41  │ Add auth tests       │ Agent-002   │ Open     │
+└──────┴──────────────────────┴─────────────┴──────────┘
 
-💰 Cost: $0.42 | Rate: 150 tokens/min | Budget: $50.00
-🟢 Agents: 3 healthy, 0 rate-limited, 0 circuit-open
+DECISIONS
+• 14:32:15 [Agent-001] Chose strategy: iterative_refine
+• 14:32:08 [Agent-003] Decision: refactor_module_A
+
+TIMELINE (last 50 events)
+14:32:45 → Agent-001 transitioned to working
+14:32:30 → Decision made: Code review strategy
 ```
 
 Stop with **Ctrl+C**.
+
+### One-Time Snapshot
+
+To render the dashboard once and exit (great for CI or piping):
+
+```bash
+npx squad-monitor snapshot
+```
 
 ## What You See
 
@@ -165,9 +151,9 @@ npm run test:coverage
 
 ### Explore the API
 
-The public API is in `src/index.ts`. Import individual collectors for custom monitoring:
+The public API is in `src/index.ts`. Import individual collectors for programmatic use:
 
-```javascript
+```typescript
 import { 
   TeamActivityMonitor,
   MonitorCollector,
@@ -175,7 +161,7 @@ import {
   TimelineCollector,
   CostCollector,
   HealthCollector
-} from './dist/index.js';
+} from 'project-squad-sdk-example-monitor';
 
 const monitor = new TeamActivityMonitor();
 
@@ -183,49 +169,6 @@ const monitor = new TeamActivityMonitor();
 const agentMonitor = monitor.getMonitorCollector();
 const workItems = monitor.getWorkItemCollector();
 const timeline = monitor.getTimelineCollector();
-
-// Use them in your own dashboard, export data, etc.
-```
-
-### Filter Timeline Events
-
-Get only specific event types:
-
-```javascript
-import { TeamActivityMonitor } from './dist/index.js';
-
-const monitor = new TeamActivityMonitor();
-await monitor.start();
-
-// After monitor is running:
-const timeline = monitor.getTimelineCollector();
-
-// Get only agent state transitions
-const transitions = timeline.getTimeline({ eventType: 'AGENT_TRANSITION' });
-
-// Get only errors
-const errors = timeline.getTimeline({ eventType: 'ERROR' });
-
-console.log(`Found ${transitions.length} agent transitions`);
-console.log(`Found ${errors.length} errors`);
-```
-
-### Export Cost Data
-
-Track token usage:
-
-```javascript
-import { TeamActivityMonitor } from './dist/index.js';
-
-const monitor = new TeamActivityMonitor();
-await monitor.start();
-
-// After monitoring:
-const costData = monitor.getMonitorCollector().getSessionCost();
-
-console.log(`Session cost: $${costData.estimatedCost}`);
-console.log(`Tokens: ${costData.tokens}`);
-console.log(`Rate: ${costData.tokensPerMinute} tokens/min`);
 ```
 
 ### Write a Custom Collector
@@ -267,7 +210,7 @@ npm test
 
 - Ensure Node.js version is 18+ (`node --version`)
 - Verify the build succeeded (`npm run build`)
-- Check that no errors appear when you run `node monitor.mjs`
+- Check that no errors appear when you run `npx squad-monitor snapshot`
 
 ## File Reference
 
@@ -276,6 +219,8 @@ project-squad-sdk-example-monitor/
 ├── src/                    # TypeScript source
 │   ├── index.ts           # Public API (exports all collectors)
 │   ├── monitor.ts         # Main orchestrator
+│   ├── cli/               # CLI entry point (squad-monitor command)
+│   │   └── index.ts       # start / snapshot commands
 │   ├── core/              # Foundation (EventBus, Monitor, Timeline)
 │   ├── collectors/        # Data collectors (Work, Decision, Cost, Health, etc)
 │   ├── adapters/          # Platform adapters (GitHub, ADO)

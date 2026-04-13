@@ -22,21 +22,20 @@ npm run build
 
 ### Start Monitoring
 
-Create a simple script `monitor.mjs`:
-
-```javascript
-import { TeamActivityMonitor } from './dist/index.js';
-
-const monitor = new TeamActivityMonitor();
-console.log('🚀 Starting Team Activity Monitor...\n');
-await monitor.start();
-console.log('✓ Monitor running. Press Ctrl+C to stop.\n');
-```
-
-Run it:
+Run the built-in CLI — no code required:
 
 ```bash
-node monitor.mjs
+npx squad-monitor start
+```
+
+The dashboard refreshes every 3 seconds. Press **Ctrl+C** to stop.
+
+### One-Time Snapshot
+
+Render the dashboard once and exit (useful for CI or piping to a file):
+
+```bash
+npx squad-monitor snapshot
 ```
 
 ### Expected Output
@@ -92,21 +91,21 @@ The terminal displays a 4-section dashboard updating every 1 second:
 
 ### Configuration
 
-The monitor works out of the box with sensible defaults. No config file required. Customize by editing your script:
+The monitor works out of the box with sensible defaults. No config file required. For programmatic use, import the API directly:
 
-```javascript
-import { TeamActivityMonitor } from './dist/index.js';
+```typescript
+import { TeamActivityMonitor } from 'project-squad-sdk-example-monitor';
 
 const monitor = new TeamActivityMonitor();
 
-// Customize individual collectors
+// Access individual collectors
 const agentMonitor = monitor.getMonitorCollector();
 const workTracker = monitor.getWorkItemCollector();
 const timelineCollector = monitor.getTimelineCollector();
 
 // Example: Get only specific event types from timeline
 const transitions = timelineCollector.getTimeline({ 
-  eventType: 'AGENT_TRANSITION' 
+  type: EventType.AGENT_IDLE 
 });
 
 await monitor.start();
@@ -116,39 +115,43 @@ await monitor.start();
 
 ### Adding Custom Collectors
 
-Create a new collector following the pattern:
+Create a new collector following the pattern used by the built-in collectors (e.g., `CostCollector`, `HealthCollector`):
 
 ```typescript
-// src/collectors/custom-collector.ts
-import { TimelineEvent, EventType } from '../core/types';
+// src/collectors/my-collector.ts
+import { TimelineEntry, EventType } from '../core/types';
 
-export class CustomCollector {
-  private data: any[] = [];
+export class MyCollector {
+  private data: TimelineEntry[] = [];
 
-  process(event: TimelineEvent): void {
-    // Your custom processing
+  process(event: TimelineEntry): void {
     this.data.push(event);
   }
 
-  getData(): any[] {
+  getData(): TimelineEntry[] {
     return this.data;
   }
 }
 ```
 
-Subscribe it to the EventBus:
+Subscribe it to the EventBus using `subscribe()`:
 
 ```typescript
-import { TeamActivityMonitor } from './dist/index.js';
-import { CustomCollector } from './dist/collectors/custom-collector.js';
+import { TeamActivityMonitor } from 'project-squad-sdk-example-monitor';
+import { MyCollector } from './my-collector.js';
 
 const monitor = new TeamActivityMonitor();
-const customCollector = new CustomCollector();
+const myCollector = new MyCollector();
 
-// Subscribe to event bus
+// Subscribe to event bus using subscribe(eventType, handler)
 const eventBus = monitor.getEventBusCollector();
-eventBus.on('agent.transition', (event) => {
-  customCollector.process(event);
+eventBus.subscribe('*', (event) => {
+  myCollector.process({
+    timestamp: new Date(),
+    type: event.type,
+    agentId: event.agentId,
+    message: `${event.type} ${event.agentId ?? ''}`,
+  });
 });
 
 await monitor.start();
@@ -232,6 +235,8 @@ Add it to the TerminalRenderer and integrate into the dashboard layout.
 src/
 ├── index.ts                    # Public API exports
 ├── monitor.ts                  # Orchestrator (start, stop, collect)
+├── cli/
+│   └── index.ts                # CLI entry point (squad-monitor command)
 ├── core/
 │   ├── eventbus-collector.ts   # Event emission (simulated or live)
 │   ├── monitor-collector.ts    # Agent state tracking
